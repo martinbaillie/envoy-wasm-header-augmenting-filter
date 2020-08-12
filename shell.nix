@@ -4,6 +4,7 @@ let
   pkgs = import sources.nixpkgs { config.allowUnfree = true; };
 in pkgs.mkShell {
   buildInputs = with pkgs; [
+    direnv
     rust
     pkg-config
     openssl
@@ -12,4 +13,10 @@ in pkgs.mkShell {
     dhall-json
     binaryen
   ];
+  shellHook = ''
+    set -o vi
+    eval "$(direnv hook $SHELL)"
+    direnv allow
+    cd .
+  '';
 }

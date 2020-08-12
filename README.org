@@ -10,6 +10,10 @@ same pod, or some external centralised service perhaps in the mesh authorising
 based on SPIFFE identity, with circuit breakers, retries, load balancing and all
 the usual Istio Envoy goodness.
 
+A potential use case of a filter like this would be to automatically gather and
+add IdP tokens to outbound requests on behalf of mesh workloads, to federate
+identity beyond the mesh itself.
+
 * Configuration
 See [[hack/proxy/envoy.yaml][envoy.yaml]] for a full example. Defaults:
 #+BEGIN_SRC json
@@ -38,6 +42,22 @@ There is a [[hack/docker-compose.yaml][docker-compose.yaml]] stack for testing t
 [[kustomization.yaml][sample]] of how to deploy it to an Istio-enabled Kubernetes cluster (using a
 Kube =ConfigMap= to host the WASM binary and Istio's =EnvoyFilter= combined with
 volume mount annotations to load it into the sidecar).
+
+* Building
+Any sufficiently modern Rust toolchain wired with the WASM target should be able
+to compile the filter.
+
+The [[shell.nix][shell.nix]] contains a Nix expression that when evaluated will give you a pure
+environment with everything you need. [[https://github.com/target/lorri][Lorri]] and =direnv= can additionally be
+used for caching.
+
+A build target is available in the [[Makefile][Makefile]]:
+#+BEGIN_SRC bash
+# Optionally: nix-shell --pure
+# OR
+# Optionally: direnv allow && lorri shell
+make build
+#+END_SRC
 
 * WIP
 - [X] TODO Test locally with a =docker-compose= stack emulating a pod with sidecars
