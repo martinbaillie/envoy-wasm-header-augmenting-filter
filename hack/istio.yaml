@@ -1,0 +1,55 @@
+---
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  labels:
+    app: sourceworkload
+  name: sourceworkload
+spec:
+  egress:
+  - hosts:
+    - "./*"
+    - istio-system/istio-egressgateway.istio-system.svc.cluster.local
+    - istio-system/istio-policy.istio-system.svc.cluster.local
+    - istio-system/istio-telemetry.istio-system.svc.cluster.local
+  workloadSelector:
+    labels:
+      app: sourceworkload
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: sourceworkload
+spec:
+  configPatches:
+  - applyTo: HTTP_FILTER
+    match:
+      context: SIDECAR_OUTBOUND
+      listener:
+        filterChain:
+          filter:
+            name: envoy.http_connection_manager
+            subFilter:
+              name: envoy.router
+    patch:
+      operation: INSERT_BEFORE
+      value:
+        config:
+          config:
+            configuration: |
+              {
+                "header_providing_service_cluster": "inbound|8081|mgmt-8081|mgmtCluster",
+                "header_providing_service_authority": "localhost",
+              }
+            name: header_augmenting_filter
+            rootId: header_augmenting_filter
+            vmConfig:
+              code:
+                local:
+                  filename: /etc/filter.wasm
+              runtime: envoy.wasm.runtime.v8
+              allow_precompiled: true
+        name: envoy.filters.http.wasm
+  workloadSelector:
+    labels:
+      app: sourceworkload

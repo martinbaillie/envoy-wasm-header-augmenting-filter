@@ -1,0 +1,17 @@
+resources:
+  - hack/kube.yaml
+  - hack/istio.yaml
+
+commonLabels:
+  app: sourceworkload
+
+configMapGenerator:
+  - name: sidecar
+    files:
+      - serve.py=hack/sidecar/serve.py
+  - name: workload
+    files:
+      - serve.py=hack/source_workload/serve.py
+  - name: filter
+    files:
+      - filter.wasm=target/wasm32-unknown-unknown/release/envoy_wasm_header_augmenting_filter.wasm

@@ -1,0 +1,60 @@
+# Mimic an Istio injected Kubernetes pod locally.
+version: '3'
+networks:
+  pod: {}
+services:
+  # An Istio Envoy proxy wired with our filter, a sidecar providing the
+  # headers and some dummy source/destination services.
+  source_workload:
+    build:
+      context: ./source_workload
+    environment:
+        - PYTHONUNBUFFERED=1
+    networks:
+      pod:
+        aliases:
+          - source
+    expose:
+      - "8080"
+    ports:
+      - "18080:8080"
+  sidecar:
+    build:
+      context: ./sidecar
+    environment:
+        - PYTHONUNBUFFERED=1
+    networks:
+      pod:
+        aliases:
+          - sidecar
+    expose:
+      - "8081"
+    ports:
+      - "18081:8081"
+  destination_workload:
+    build:
+      context: ./destination_workload
+    environment:
+        - PYTHONUNBUFFERED=1
+    networks:
+      pod:
+        aliases:
+          - destination
+    expose:
+      - "8080"
+    ports:
+      - "18082:8080"
+  proxy:
+    build:
+      context: ./proxy
+    volumes:
+      - ./proxy/envoy.yaml:/etc/envoy.yaml
+      - ../target/wasm32-unknown-unknown/release/envoy_wasm_header_augmenting_filter.wasm:/etc/filter.wasm
+    networks:
+      - pod
+    expose:
+      - "80"
+      - "8001"
+    ports:
+      - "18000:80"   # Envoy listener.
+      - "18001:8001" # Admin UI.

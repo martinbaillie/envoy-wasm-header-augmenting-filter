@@ -1,0 +1,97 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: sourceworkload
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sourceworkload
+spec:
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+         sidecar.istio.io/userVolumeMount: '{ "filter":{"mountPath":"/etc/filter.wasm","subPath":"filter.wasm"} }'
+    spec:
+      serviceAccountName: sourceworkload
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: workload
+          image: nixery.dev/shell/python3/curl
+          command: ["python3", "/serve.py"]
+          imagePullPolicy: IfNotPresent
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /alive
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 5
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /ready
+              port: 8080
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 5
+          resources:
+            limits:
+              cpu: "1"
+              memory: 256Mi
+            requests:
+              cpu: 250m
+              memory: 64Mi
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+          volumeMounts:
+            - name: workload
+              mountPath: /serve.py
+              subPath: serve.py
+        - name: sidecar
+          image: nixery.dev/shell/python3/curl
+          command: ["python3", "/serve.py"]
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: "1"
+              memory: 256Mi
+            requests:
+              cpu: 250m
+              memory: 64Mi
+          ports:
+            - containerPort: 8081
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            initialDelaySeconds: 120
+            periodSeconds: 3
+            successThreshold: 1
+            tcpSocket:
+              port: 8081
+            timeoutSeconds: 1
+          volumeMounts:
+            - name: sidecar
+              mountPath: /serve.py
+              subPath: serve.py
+      volumes:
+        - name: workload
+          configMap:
+            name: workload
+        - name: sidecar
+          configMap:
+            name: sidecar
+        - name: filter
+          configMap:
+            name: filter

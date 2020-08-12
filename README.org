@@ -1,0 +1,48 @@
+#+TITLE: envoy-wasm-header-augmenting-filter
+
+Proof of concept Envoy WASM-based HTTP filter that can augment requests with
+additional headers automatically discovered from a 3rd party endpoint at regular
+intervals.
+
+The header-providing 3rd party service can be any configured Envoy cluster. In
+an Istio context, this could be another sidecar available over loopback in the
+same pod, or some external centralised service perhaps in the mesh authorising
+based on SPIFFE identity, with circuit breakers, retries, load balancing and all
+the usual Istio Envoy goodness.
+
+* Configuration
+See [[hack/proxy/envoy.yaml][envoy.yaml]] for a full example. Defaults:
+#+BEGIN_SRC json
+{
+    "header_providing_service_cluster": "sidecar",
+    "header_providing_service_authority": "sidecar",
+    "header_providing_service_path": "/headers",
+    "header_cache_expiry": "360s"
+}
+#+END_SRC
+
+The header-providing service is expected to return a simple [[hack/sidecar/serve.py][JSON map]] of headers.
+These will all be added to HTTP requests passing through the filter.
+
+The Envoy filter will poll the service using the
+=header_providing_service_cluster= at =header_providing_service_path=,
+presenting as =header_providing_service_authority=.
+
+Valid headers returned from this service are cached by the Envoy filter,
+renewing every =header_cache_expiry= interval. This polling and caching action
+is happening out-of-band on the filter root context rather than the request path
+as the WASM workers process them.
+
+* Usage
+There is a [[hack/docker-compose.yaml][docker-compose.yaml]] stack for testing the filter locally and also a
+[[kustomization.yaml][sample]] of how to deploy it to an Istio-enabled Kubernetes cluster (using a
+Kube =ConfigMap= to host the WASM binary and Istio's =EnvoyFilter= combined with
+volume mount annotations to load it into the sidecar).
+
+* WIP
+- [X] TODO Test locally with a =docker-compose= stack emulating a pod with sidecars
+- [X] TODO Test remotely in an Istio-enabled Kube cluster
+- [-] TODO WASM binary size shrinking
+  Attempt 1: 1.7mb --> 372kb with =lto true= and =opt-level 's'=
+  Good enough for shipping to a binary Kube  config map.
+  Many more optimisations: https://rustwasm.github.io/book/reference/code-size.html
