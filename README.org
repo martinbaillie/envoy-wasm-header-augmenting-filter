@@ -63,6 +63,6 @@ make build
 - [X] TODO Test locally with a =docker-compose= stack emulating a pod with sidecars
 - [X] TODO Test remotely in an Istio-enabled Kube cluster
 - [-] TODO WASM binary size shrinking
-  Attempt 1: 1.7mb --> 372kb with =lto true= and =opt-level 's'=
-  Good enough for shipping to a binary Kube  config map.
-  Many more optimisations: https://rustwasm.github.io/book/reference/code-size.html
+  Attempt 1: 1.7mb --> 372kb with =lto= set to true and =opt-level= set to 's'
+  Attempt 2: 372kb --> 131kb with =wasm-pack=
+  More than good enough for shipping to a binary Kube config map.

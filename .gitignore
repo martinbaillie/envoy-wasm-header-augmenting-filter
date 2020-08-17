@@ -1,2 +1,3 @@
 /target
+/hack/proxy/pkg
 Cargo.lock

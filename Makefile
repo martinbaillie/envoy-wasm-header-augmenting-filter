@@ -7,12 +7,10 @@ ifndef DEBUG
 endif
 .DEFAULT_GOAL	:=build
 
-RELEASE:=target/wasm32-unknown-unknown/release
+hack/proxy/pkg/envoy_wasm_header_augmenting_filter_bg.wasm: src/lib.rs
+	wasm-pack build --out-dir $(@D)
 
-$(RELEASE)/envoy_wasm_header_augmenting_filter.wasm: src/lib.rs
-	cargo build --target=wasm32-unknown-unknown --release
-
-build: $(RELEASE)/envoy_wasm_header_augmenting_filter.wasm
+build: hack/proxy/pkg/envoy_wasm_header_augmenting_filter_bg.wasm
 .PHONY: build
 
 integration:
@@ -20,4 +18,5 @@ integration:
 	docker-compose up --build --remove-orphans
 .PHONY: integration
 
-deploy: build ; kubectl create -k .
+deploy: build ; kubectl create -k hack
+destroy: ; kubectl delete -k hack

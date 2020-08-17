@@ -49,7 +49,7 @@ services:
       context: ./proxy
     volumes:
       - ./proxy/envoy.yaml:/etc/envoy.yaml
-      - ../target/wasm32-unknown-unknown/release/envoy_wasm_header_augmenting_filter.wasm:/etc/filter.wasm
+      - ./proxy/pkg/envoy_wasm_header_augmenting_filter_bg.wasm:/etc/filter.wasm
     networks:
       - pod
     expose:

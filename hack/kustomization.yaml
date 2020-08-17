@@ -1,0 +1,17 @@
+resources:
+  - kube.yaml
+  - istio.yaml
+
+commonLabels:
+  app: sourceworkload
+
+configMapGenerator:
+  - name: sidecar
+    files:
+      - serve.py=sidecar/serve.py
+  - name: workload
+    files:
+      - serve.py=source_workload/serve.py
+  - name: filter
+    files:
+      - filter.wasm=proxy/pkg/envoy_wasm_header_augmenting_filter_bg.wasm

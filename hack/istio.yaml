@@ -39,7 +39,7 @@ spec:
             configuration: |
               {
                 "header_providing_service_cluster": "inbound|8081|mgmt-8081|mgmtCluster",
-                "header_providing_service_authority": "localhost",
+                "header_providing_service_authority": "localhost"
               }
             name: header_augmenting_filter
             rootId: header_augmenting_filter
